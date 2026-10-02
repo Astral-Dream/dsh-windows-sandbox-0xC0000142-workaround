@@ -1,6 +1,6 @@
 # DSH-Sandbox-Fix-Windows
 
-> 修复 DeepSeek Harness 0.2.0-rc.2 在 Windows 上 **workspace-write（沙箱内）权限下 shell 完全不可用**（`0xC0000142`）的问题。
+> 修复 DeepSeek Harness 0.2.0-rc.2 在 Windows 上 **workspace-write（沙箱内）权限下 shell 完全不可用**（`0xC0000142`）的问题。后续版本该方法可能失效，或该问题可能得到官方修复。
 
 ---
 
