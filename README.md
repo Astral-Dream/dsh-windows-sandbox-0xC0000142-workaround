@@ -123,11 +123,12 @@ DeepSeek Harness (Electron) 启动沙箱程序
 ```
 DSH-Sandbox-Fix-Windows/
 ├── README.md                              ← 本文件
-├── LICENSE                                ← MIT
+├── LICENSE                                ← MIT-0（不要求署名）
+├── THIRD-PARTY-NOTICES.md                 ← 第三方代码来源与许可声明（runner-pristine.js）
 ├── docs/
 │   └── DSH-Windows沙箱修复-交接文档.md    ← 完整技术文档（根因/代码差异/步骤/回滚）
 └── scripts/
-    ├── runner-pristine.js                 ← 原始 runner（补丁输入，勿改）
+    ├── runner-pristine.js                 ← 原始 runner（DeepSeek 的 MIT 代码，补丁输入，勿改）
     ├── dsh-install-fix2.mjs               ← 打补丁程序
     └── DSH-沙箱修复-一键重打补丁.ps1      ← 一键脚本
 ```
@@ -310,6 +311,18 @@ Remove-Item "C:\Users\Administrator\.dsh\sandbox-support" -Recurse -Force
 - 排查与修复过程：由 DeepSeek Harness 的 agent 在本机会话中自主完成
 - 沙箱实现参考：`@deepseek-ai/dsh-sandbox-windows-acl` 内的 README（其"Boundaries"与"Modes and token lists"章节记录了相关边界）
 
+### 第三方代码
+
+`scripts/runner-pristine.js` 是 **`@deepseek-ai/dsh-sandbox-windows-acl@0.2.0-rc.2`** 里的原始文件（`lib/runner.js`），**逐字提取、未做修改**，版权归 **DeepSeek**（MIT）。它在本仓库里只作为补丁的输入存在。完整来源、原文许可证与相关说明见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+> 本项目是**非官方**修复，与 DeepSeek 无从属、赞助或背书关系；"DeepSeek Harness" 及相关标识归其权利人所有。
+
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。
+本仓库自己写的代码（脚本、文档）采用 **MIT-0（MIT No Attribution）**，见 [LICENSE](LICENSE)：
+
+- 你可以**随便用、随便改、随便再发布、甚至闭源商用**；
+- **不要求保留署名或版权声明**（这就是它和 MIT 的唯一区别）；
+- 依然**没有任何担保**，风险自担。
+
+> ⚠️ MIT-0 只覆盖**本仓库作者的代码**。仓库内的第三方文件（`scripts/runner-pristine.js`，版权 DeepSeek，MIT）**不因本许可而变成无署名**，其原始许可与署名见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

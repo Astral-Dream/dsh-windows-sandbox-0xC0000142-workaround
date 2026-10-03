@@ -449,7 +449,7 @@ Copy-Item "D:\deepseek harness\resources\app.asar.pre-fix-<填时间戳>" "D:\de
 |---|---|
 | `scripts/DSH-沙箱修复-一键重打补丁.ps1` | **一键重打补丁脚本**（更新后运行这个） |
 | `scripts/dsh-install-fix2.mjs` | 实际执行打补丁的程序（被上面的 ps1 调用，必须与 ps1 同目录） |
-| `scripts/runner-pristine.js` | **原始 runner 文件**（补丁的输入，7807 字节，务必保留） |
+| `scripts/runner-pristine.js` | **原始 runner 文件**（补丁的输入，7807 字节，务必保留）。来源：`@deepseek-ai/dsh-sandbox-windows-acl@0.2.0-rc.2` 的 `lib/runner.js`，逐字提取、未修改，**版权归 DeepSeek（MIT）** —— 见仓库根目录 `THIRD-PARTY-NOTICES.md` |
 
 **本机实际位置**：
 
