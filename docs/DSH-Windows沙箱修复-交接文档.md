@@ -186,8 +186,22 @@ if (Get-Process 'DeepSeek Harness' -ErrorAction SilentlyContinue) { '仍在运�
 打开 PowerShell（管理员），执行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "D:\Users\deepseek-harness\default-workspace\DSH-沙箱修复-一键重打补丁.ps1"
+powershell -ExecutionPolicy Bypass -File "D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\DSH-沙箱修复-一键重打补丁.ps1"
 ```
+
+> **脚本不再写死任何绝对路径**（2026-10 改版）。运行后它会依次询问三条路径 —— DSH 安装目录、支撑树目录、普通 node 运行时 —— 并把自动探测到的值作为默认值显示在提示里，**直接回车即采用默认值**。三项输入完会列出全部路径请你确认（输入 `Y` 开始，其它键取消）。
+>
+> 也可以完全跳开交互，用参数一次传齐：
+>
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File "…\DSH-沙箱修复-一键重打补丁.ps1" `
+>     -InstallDir "D:\deepseek harness" `
+>     -SupportTree "C:\Users\Administrator\.dsh\sandbox-support" `
+>     -PlainNode "D:\deepseek harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe" `
+>     -Yes
+> ```
+>
+> 参数同样会做校验（目录下必须有 `resources\app.asar`、目标必须是 `node.exe`），不合法会直接报错退出而不是开始打补丁。
 
 **第 3 步：确认输出**
 
@@ -214,7 +228,7 @@ OK: fix installed in place (archive size unchanged: 121348951 bytes)
 
 1. 检查应用是否真的关闭（并实际尝试独占打开 `app.asar`，比进程检查更可靠）；
 2. 从 `runner-pristine.js`（或 `app.asar.backup-gitfix`）取**原始** runner；
-3. 把沙箱支撑树解包/更新到 `C:\Users\Administrator\.dsh\sandbox-support\`；
+3. 把沙箱支撑树解包/更新到**你输入的支撑树目录**（本机为 `C:\Users\Administrator\.dsh\sandbox-support\`）；
 4. 校验原生模块是有效 PE 二进制（`MZ` 头）—— 防止 asar 占位符覆盖真二进制；
 5. 原地写入补丁（字节数不变），并保留：
    - `app.asar.backup-gitfix` —— **原始未修复**归档，永不覆盖；
@@ -223,16 +237,16 @@ OK: fix installed in place (archive size unchanged: 121348951 bytes)
 
 ### 5.4 手动操作（脚本不可用时）
 
-如果你更愿意手动，核心就是运行同一个补丁程序：
+如果你更愿意手动，核心就是运行同一个补丁程序（下面这些绝对路径就是交互式提问时你会输入的内容，可按本机实际情况替换）：
 
 ```powershell
 & "D:\deepseek harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe" `
-  "D:\Users\deepseek-harness\default-workspace\dsh-install-fix2.mjs" `
+  "D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\dsh-install-fix2.mjs" `
   "D:\deepseek harness\resources\app.asar" `
   "C:\Users\Administrator\.dsh\sandbox-support" `
   "D:\deepseek harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe" `
   '""' `
-  "D:\Users\deepseek-harness\default-workspace\runner-pristine.js"
+  "D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\runner-pristine.js"
 ```
 
 参数含义（按顺序）：
@@ -299,12 +313,12 @@ robocopy "C:\Users\Administrator\.dsh\sandbox-support" "E:\dsh-backup\sandbox-su
 **同时请备份这三个小文件**（它们才是真正的修复资产）：
 
 ```
-D:\Users\deepseek-harness\default-workspace\runner-pristine.js
-D:\Users\deepseek-harness\default-workspace\dsh-install-fix2.mjs
-D:\Users\deepseek-harness\default-workspace\DSH-沙箱修复-一键重打补丁.ps1
+D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\runner-pristine.js
+D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\dsh-install-fix2.mjs
+D:\Users\deepseek-harness\default-workspace\DSH-Sandbox-Fix-Windows\scripts\DSH-沙箱修复-一键重打补丁.ps1
 ```
 
-有了这三个文件 + DSH 安装目录，**即使支撑树和 `.fixed` 全丢了也能重建修复**。
+有了这三个文件 + DSH 安装目录，**即使支撑树和 `.fixed` 全丢了也能重建修复**（脚本不依赖任何写死路径，换机器也能用）。
 
 ---
 
@@ -375,7 +389,7 @@ Remove-Item "C:\Users\Administrator\.dsh\sandbox-support" -Recurse -Force
 
 - **不要把它移进工作区**。它必须留在工作区**之外** —— 沙箱不授予工作区外目录的写入权限，这样沙箱内的进程无法篡改它（若放在工作区内，沙箱内的进程可以改写沙箱自身的组件，等于自毁防线）。这一点是我在制作过程中一度搞错、后来改正的。
 - **自动化清理工具**（如磁盘清理、某些"空间释放"软件）可能把它当垃圾删掉。若发现沙箱内 shell 突然失效，先检查这个目录是否还在。
-- **路径中的用户名**：本机是 `Administrator`。若换用户配置，路径需相应调整，脚本里也必须改（`$SupportTree` 变量）。
+- **路径中的用户名**：本机是 `Administrator`（`%USERPROFILE%\.dsh\sandbox-support`）。换用户配置时**不需要改脚本** —— 脚本没有写死路径，默认值就是当前用户的 `%USERPROFILE%\.dsh\sandbox-support`，也可以在提示里手动输入别的目录（或用 `-SupportTree` 参数）。
 - 脚本会在其中写一个 `applied-version.txt` 留痕，记录了每次打补丁的时间与 asar 哈希。
 
 ---

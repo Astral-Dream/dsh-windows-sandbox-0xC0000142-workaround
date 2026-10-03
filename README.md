@@ -1,6 +1,6 @@
 # DSH-Sandbox-Fix-Windows
 
-> 修复 DeepSeek Harness 0.2.0-rc.2 在 Windows 上 **workspace-write（沙箱内）权限下 shell 完全不可用**（`0xC0000142`）的问题。后续版本该方法可能失效，或该问题可能得到官方修复。
+> 修复 DeepSeek Harness 在 Windows 上 **workspace-write（沙箱内）权限下 shell 完全不可用**（`0xC0000142`）的问题。
 
 ---
 
@@ -16,7 +16,7 @@
 - 这**不是上游官方修复**，而是直接修改 `app.asar` 的本地补丁。
 - 涉及修改 DeepSeek Harness 的安装文件，请自行评估风险、**务必先备份**。
 
-**3. 如果修复出错或无效 —— 把交接文档和所有修复资产交给 DeepSeek Harness，让它尝试自我修复。我不会审核任何issue或pr，因为我完全不知道他是怎么实现的**
+**3. 如果修复出错或无效 —— 把交接文档和所有修复资产交给 DeepSeek Harness，让它尝试自我修复。**
 
 ```
 docs/DSH-Windows沙箱修复-交接文档.md
@@ -136,29 +136,46 @@ DSH-Sandbox-Fix-Windows/
 if (Get-Process 'DeepSeek Harness' -ErrorAction SilentlyContinue) { '仍在运行' } else { '已关闭' }
 ```
 
-### 第 2 步：确认脚本里的路径
+### 第 2 步：运行脚本，按提示手动输入路径
 
-打开 `scripts/DSH-沙箱修复-一键重打补丁.ps1`，检查文件开头的路径配置是否符合你的环境：
+脚本里**不再写死任何绝对路径**（换机器、换用户名、换安装盘都能直接用）。三条路径都在运行时手动输入：
 
 ```powershell
-$InstallDir   = 'D:\deepseek harness'                        # DSH 安装目录
-$SupportTree  = 'C:\Users\Administrator\.dsh\sandbox-support' # 支撑树位置（可改）
+powershell -ExecutionPolicy Bypass -File "路径\DSH-沙箱修复-一键重打补丁.ps1"
 ```
 
-`$SupportTree` 必须**位于工作区之外**（见下方"注意事项"）。用户名不同的话要相应修改。
+脚本会依次问你：
 
-> 💡 **编辑 `.ps1` 时请保留 UTF-8 BOM**。Windows PowerShell 5.1 对无 BOM 的文件按 ANSI 解码，脚本里的中文会被解码错乱并导致**语法错误无法运行**。用 VS Code 保存时选 "UTF-8 with BOM"，或在 PowerShell 里执行：
+| 提示 | 说明 |
+|---|---|
+| DSH 安装目录 | 含 `resources\app.asar` 的目录。默认值自动探测（优先取正在运行的 DSH 进程所在目录，其次常见安装位置） |
+| 支撑树目录 | 沙箱程序的磁盘副本，约 297 MB。默认 `%USERPROFILE%\.dsh\sandbox-support`，**必须位于工作区之外**（见下方"注意事项"） |
+| 普通 node 运行时 | 必须是 DSH **自带**的 `node.exe`，默认会自动在 `resources\runtime\...\dependencies\node\bin\node.exe` 里找 |
+
+- **直接回车 = 采用方括号/提示里给出的默认值**；输入非法（目录不存在、不是 `node.exe` 等）会提示原因并重新询问；
+- 三项输入完会**列出全部路径让你确认**，输入 `Y` 回车才开始打补丁，其它键取消（取消不改动任何文件）；
+- 粘贴路径时带上的引号会自动去掉。
+
+如果不想交互，也可以用参数一次传齐（三条都传时不提问）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "路径\DSH-沙箱修复-一键重打补丁.ps1" `
+    -InstallDir "D:\deepseek harness" `
+    -SupportTree "C:\Users\你的用户名\.dsh\sandbox-support" `
+    -PlainNode "D:\deepseek harness\resources\runtime\primary-runtime\dependencies\node\bin\node.exe" `
+    -Yes
+```
+
+> 💡 路径里含空格没关系（脚本内部全程用引号/参数传递），**不要**自己加转义。
+
+> 💡 **如果你要编辑 `.ps1`，请务必保留 UTF-8 BOM**。Windows PowerShell 5.1 对无 BOM 的文件按 ANSI 解码，脚本里的中文会被解码错乱并导致**语法错误无法运行**。用 VS Code 保存时选 "UTF-8 with BOM"，或在 PowerShell 里执行：
 > ```powershell
 > $p = "路径\DSH-沙箱修复-一键重打补丁.ps1"
 > $t = [IO.File]::ReadAllText($p, [Text.UTF8Encoding]::new($false))
 > [IO.File]::WriteAllText($p, $t, (New-Object Text.UTF8Encoding($true)))
 > ```
 
-### 第 3 步：运行一键脚本
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "路径\DSH-沙箱修复-一键重打补丁.ps1"
-```
+### 第 3 步：等待脚本完成
 
 期望输出结尾：
 
@@ -194,7 +211,7 @@ DSH 自动更新会替换 `app.asar`，修复失效。**更新后重新运行一
 
 ### 支撑树不能删
 
-脚本会创建 `C:\Users\Administrator\.dsh\sandbox-support\`（约 **297 MB**）——沙箱程序的磁盘副本，修复依赖它。
+脚本会在你输入的支撑树目录（默认 `%USERPROFILE%\.dsh\sandbox-support\`，本机即 `C:\Users\Administrator\.dsh\sandbox-support\`）创建约 **297 MB** 的沙箱程序磁盘副本——修复依赖它。
 
 | 情况 | 能否删 |
 |---|---|
